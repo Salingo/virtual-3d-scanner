@@ -43,6 +43,12 @@ def setup_blender(width, height, focal_length):
     scene.render.resolution_y = height
     scene.render.resolution_percentage = 100
 
+    # remove default cube and light
+    bpy.data.objects['Cube'].select_set(state=True)
+    bpy.ops.object.delete()
+    bpy.data.objects['Light'].select_set(state=True)
+    bpy.ops.object.delete()
+
     # create 6 surrounding lights
     lights = ['light_front', 'light_back', 'light_left', 'light_right', 'light_top', 'light_bottom']
     lights_poses = np.array([[0,0,5],[0,0,-5],[0,5,0],[0,-5,0],[5,0,0],[-5,0,0]])
@@ -61,10 +67,6 @@ def setup_blender(width, height, focal_length):
     for n in tree.nodes:
         tree.nodes.remove(n)
     tree.nodes.new('CompositorNodeRLayers')
-
-    # remove default cube
-    bpy.data.objects['Cube'].select_set(state=True)
-    bpy.ops.object.delete()
 
     return scene, camera
 
@@ -85,23 +87,24 @@ def depth2pcd(depth, intrinsic, pose=None, colors=None):
 
 
 if __name__ == '__main__':
-    input_dir = sys.argv[-8]
+    print(sys.argv)
+    model_dir = sys.argv[-8]
     output_dir = sys.argv[-7]
     model_id = sys.argv[-6]
     save_rgbd = int(sys.argv[-5])
-    save_pc_perframe = int(sys.argv[-4])
+    save_pc_per_view = int(sys.argv[-4])
     save_pc_complete = int(sys.argv[-3])
-    pc_perframe_size = int(sys.argv[-2])
+    pc_per_view_size = int(sys.argv[-2])
     pc_complete_size = int(sys.argv[-1])
 
-    if os.path.isfile(input_dir):
+    if os.path.isfile(model_dir):
         # output directory settings
         if save_rgbd:
             output_dir_color = os.path.join(output_dir, 'color')
             output_dir_depth = os.path.join(output_dir, 'depth')
             os.makedirs(output_dir_color, exist_ok=True)
             os.makedirs(output_dir_depth, exist_ok=True)
-        if save_pc_perframe or save_pc_complete:
+        if save_pc_per_view or save_pc_complete:
             output_dir_pc = os.path.join(output_dir, 'pc')
             os.makedirs(output_dir_pc, exist_ok=True)
 
@@ -113,7 +116,7 @@ if __name__ == '__main__':
         scene, camera = setup_blender(width, height, focal)
 
         # import model
-        bpy.ops.import_scene.obj(filepath=input_dir, axis_forward='Y', axis_up='Z')
+        bpy.ops.import_scene.obj(filepath=model_dir, axis_forward='Y', axis_up='Z')
 
         # start scanning
         pc_complete = []
@@ -134,27 +137,27 @@ if __name__ == '__main__':
                 cv2.imwrite(output_dir_depth + '/%s-depth-%d.png' % (model_id, i), np.uint16(depth_img * 1000))  # convert depth units from meters to millimeters
 
             # save point cloud
-            if save_pc_perframe or save_pc_complete:
-                pc_perframe = depth2pcd(depth_img, intrinsic, np.array(extrinsic[i]), color_img)
+            if save_pc_per_view or save_pc_complete:
+                pc_per_view = depth2pcd(depth_img, intrinsic, np.array(extrinsic[i]), color_img)
 
                 if save_pc_complete:
                     if i == 0:
-                        pc_complete = pc_perframe
+                        pc_complete = pc_per_view
                     else:
-                        pc_complete = np.concatenate((pc_complete, pc_perframe), axis=0)
+                        pc_complete = np.concatenate((pc_complete, pc_per_view), axis=0)
 
-                if save_pc_perframe:
-                    if pc_perframe.shape[0] >= pc_perframe_size:
-                        np.random.shuffle(pc_perframe)
-                        pc_perframe = pc_perframe[:pc_perframe_size, :]
-                        pc_perframe = pc_perframe + np.random.rand(pc_perframe.shape[0], pc_perframe.shape[1]) * 0.005  # add noise to simulate real scanner
+                if save_pc_per_view:
+                    if pc_per_view.shape[0] >= pc_per_view_size:
+                        np.random.shuffle(pc_per_view)
+                        pc_per_view = pc_per_view[:pc_per_view_size, :]
+                        pc_per_view = pc_per_view + np.random.rand(pc_per_view.shape[0], pc_per_view.shape[1]) * 0.005  # add noise to simulate real scanner
                         # Save as .h5
-                        with h5py.File(os.path.join(output_dir_pc + '/%s-perframe-%d.h5' %(model_id, i)), 'w') as f:
-                            f.create_dataset(name="data", data=np.array(pc_perframe).astype(np.float32), compression="gzip")
+                        with h5py.File(os.path.join(output_dir_pc + '/%s-perview-%d.h5' %(model_id, i)), 'w') as f:
+                            f.create_dataset(name="data", data=np.array(pc_per_view).astype(np.float32), compression="gzip")
                         # Save as .pts
-                        # np.savetxt(os.path.join(output_dir_pc + '/%s-perframe-%d.pts' % (model_id, i)), pc_perframe, fmt='%.8f')
+                        # np.savetxt(os.path.join(output_dir_pc + '/%s-per_view-%d.pts' % (model_id, i)), pc_per_view, fmt='%.8f')
                     else:
-                        print('Points number is %d, fewer than %d' % (pc_perframe.shape[0], pc_perframe_size))
+                        print('Points number is %d, fewer than %d' % (pc_per_view.shape[0], pc_per_view_size))
                         with open(os.path.join(output_dir, 'pcsize_error.txt'), 'a') as f_exp:
                             f_exp.writelines(model_id+'\n')
 
