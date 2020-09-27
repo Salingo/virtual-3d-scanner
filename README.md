@@ -1,7 +1,5 @@
 # Virtual 3D Scanner
 
-## Introduction
-
 This script is designed to simulate real world 3D scanners (Kinect, PrimeSense, etc.) in virtual environments. With this tool, you can easily create RGB-D or point cloud dataset from synthetic models, such dataset could be useful in the field related to computer graphics and computer vision.
 
 Given a 3D model, a set of customizable virtual cameras scan the model from different views, the RGB-D images and corresponding point clouds are then produced.
@@ -55,6 +53,7 @@ The script is running on [Blender](https://www.blender.org) (tested on version 2
     ./python3.7m -m pip install h5py
     ```
 
+
 ## Usage
 
 ### Single scan
@@ -93,6 +92,7 @@ Note: The script of batch scan is tested on ShapeNetCore.v2 dataset. For other d
   - save_pc_complete: whether to save the complete point cloud by combining all views
   - pc_per_view_size: the points number of the single view point cloud
   - pc_complete_size: the points number of the complete point cloud
+
 
 ## Customize
 - Camera intrinsic:
