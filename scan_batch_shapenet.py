@@ -1,3 +1,12 @@
+'''
+Usage:
+python scan_batch_shapenet.py <num_process> <dataset_dir> <output_dir> <save_rgbd_image> <save_pc_per_view> <save_pc_complete> <pc_per_view_size> <pc_complete_size>
+
+Example:
+Scan all the models in specific categories in ShapeNetCore directory:
+python scan_batch_shapenet.py 8 F:/datasets/ShapeNetCore.v2 ./output 1 1 1 2048 16384
+'''
+
 import os
 import sys
 import subprocess
@@ -26,7 +35,7 @@ if __name__ == '__main__':
         model_id_list = [i for i in os.listdir(category_dir) if os.path.isdir(os.path.join(category_dir, i))]
         model_dir_list = [os.path.join(category_dir, i, 'models', 'model_normalized.obj') for i in model_id_list]
 
-        commands.extend([[blender_command, '-b', '-P', 'scan_single.py', model_dir, os.path.join(output_dir, category), model_id, save_rgbd_image, save_pc_per_view, save_pc_complete, pc_per_view_size, pc_complete_size] for model_dir, model_id in zip(model_dir_list, model_id_list)])
+        commands.extend([[blender_command, '-b', '-P', 'scan_single_around.py', model_dir, os.path.join(output_dir, category), model_id, save_rgbd_image, save_pc_per_view, save_pc_complete, pc_per_view_size, pc_complete_size] for model_dir, model_id in zip(model_dir_list, model_id_list)])
 
     pool = Pool(num_process)
     print('=== Rendering %d models on %d workers ===' % (len(commands), num_process))
