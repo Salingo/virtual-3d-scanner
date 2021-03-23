@@ -128,13 +128,13 @@ if __name__ == '__main__':
 		bpy.ops.object.select_all(action='DESELECT')
 		# assign unique id for each object
 		multi_parts_flag = False
-		instance_id = 1
+		instance_id = 0
 		for obj in bpy.data.objects:
 			if obj.type == "MESH":
 				obj.select_set(True)
 				obj["inst_id"] = instance_id
 				instance_id += 1
-		num_parts = instance_id
+		num_parts = instance_id + 1
 		if num_parts > 1:
 			multi_parts_flag = True
 		# start scanning
@@ -159,12 +159,12 @@ if __name__ == '__main__':
 			if save_pc_per_view or save_pc_complete:
 				pc_per_view = []
 				if multi_parts_flag:
-					for k in range(1, num_parts + 1):
+					for k in range(num_parts):
 						depth_img_part = np.where(segid_img == k, depth_img, 0)
 						part_pcd = depth2pcd(depth_img_part, INTRINSIC, np.array(camera.matrix_world), color_img)
 						part_index = np.repeat(k, len(part_pcd))
 						part_pcd = np.column_stack((part_pcd, part_index))
-						if k == 1:
+						if k == 0:
 							pc_per_view = part_pcd
 						else:
 							pc_per_view = np.concatenate((pc_per_view, part_pcd), axis=0)
